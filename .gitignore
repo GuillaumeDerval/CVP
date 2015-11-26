@@ -1,0 +1,8 @@
+# Created by .ignore support plugin (hsz.mobi)
+*.jpg
+*.png
+*.tiff
+.DS_Store
+*.pyc
+*.zip
+.idea

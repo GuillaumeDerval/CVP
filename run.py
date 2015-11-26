@@ -34,40 +34,52 @@ dynamic_img_path = {
              "img/ArchSequence/A_2_03.jpg",
              "img/ArchSequence/A_3_02.jpg",
              "img/ArchSequence/A_4_06.jpg",
-             "img/ArchSequence/A_5_01.jpg"]
+             "img/ArchSequence/A_5_01.jpg"],
+    "forrest": ["img/ForrestSequence/1_Scene7_10.tif",
+                "img/ForrestSequence/2_Scene7_09.tif",
+                "img/ForrestSequence/3_Scene7_05.tif",
+                "img/ForrestSequence/4_Scene7_13.tif"],
+    "puppets": ["img/PuppetsSequence/npGhost_1.tif",
+                "img/PuppetsSequence/npGhost_2.tif",
+                "img/PuppetsSequence/npGhost_3.tif",
+                "img/PuppetsSequence/npGhost_4.tif",
+                "img/PuppetsSequence/npGhost_5.tif"],
+    "garden": ["img/SculptureGardenSequence/1.tif",
+               "img/SculptureGardenSequence/2.tif",
+               "img/SculptureGardenSequence/3.tif",
+               "img/SculptureGardenSequence/4.tif",
+               "img/SculptureGardenSequence/5.tif"]
 }
 
 def output_gradients(name, sigma):
     imgs = map(misc.imread, static_img_path[name])
     imgs_bw = map(srgb_grayscale, imgs)
-    Ixs, Iys, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_bw))
+    #Ixs, Iys, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_bw))
 
-    if not os.path.exists("output/{}".format(name)):
-        os.mkdir("output/{}".format(name))
+    #if not os.path.exists("output/{}".format(name)):
+    #    os.mkdir("output/{}".format(name))
 
-    for i in range(0, len(imgs)):
-        misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "orig", sigma), numpy.uint8(imgs[i]))
-        misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "dx", sigma), numpy.uint8(Ixs[i]))
-        misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "dy", sigma), numpy.uint8(Iys[i]))
-        misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "m", sigma), numpy.uint8(ms[i]*255.0))
-        misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "theta", sigma), numpy.uint8(255.0*(thetas[i]+numpy.pi)/(2.0*numpy.pi)))
-        #plt.imshow(ms[i])
-        #plt.show()
+    #for i in range(0, len(imgs)):
+    #    misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "orig", sigma), numpy.uint8(imgs[i]))
+    #    misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "dx", sigma), numpy.uint8(Ixs[i]))
+    #    misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "dy", sigma), numpy.uint8(Iys[i]))
+    #    misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "m", sigma), numpy.uint8(ms[i]*255.0))
+    #    misc.imsave('output/{}/{}_{}_sigma{}.png'.format(name, str(i), "theta", sigma), numpy.uint8(255.0*(thetas[i]+numpy.pi)/(2.0*numpy.pi)))
     output = compute_static_hdr(imgs, sigma)
     displayable_output = numpy.uint8(output)
-    misc.imsave('output/{}.png'.format(name, sigma), displayable_output)
+    misc.imsave('output/{}_{}.png'.format(name, sigma), displayable_output)
 
 
-output_gradients("chateau", 2)
+#output_gradients("grandcanal", 2)
 
-#for name in imgs_path:
+#for name in static_img_path:
 #    for i in [2, 3, 5, 10, 20, 50]:
 #        output_gradients(name, i)
 
 def output_img(name, sigma):
-    imgs = map(misc.imread, static_img_path[name])
+    imgs = map(misc.imread, dynamic_img_path[name])
 
-    output = compute_static_hdr(imgs, sigma)
+    output = compute_dynamic_hdr(imgs, sigma)
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_sigma{}g.png'.format(name, sigma), displayable_output)
 
@@ -75,4 +87,4 @@ def output_img(name, sigma):
     # plt.show()
 
 
-#output_img('chateau', 2)
+output_img('garden', 2)
