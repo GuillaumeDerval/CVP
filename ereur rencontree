@@ -1,0 +1,26 @@
+Image dynamique :
+
+Traceback (most recent call last):
+  File "run.py", line 90, in <module>
+    output_img('garden', 2)
+  File "run.py", line 82, in output_img
+    output = compute_dynamic_hdr(imgs, sigma)
+  File "/home/kevin/5A/traitement image/CVP/lib.py", line 190, in compute_dynamic_hdr
+    W = [cross_bilinear(imgs_bw[i], W[i]) for i in range(0, len(W))]
+  File "/home/kevin/5A/traitement image/CVP/lib.py", line 140, in cross_bilinear
+    out = cv2.ximgproc.jointBilateralFilter(joint, src, d=-1, sigmaColor=255/10, sigmaSpace=16)
+AttributeError: 'module' object has no attribute 'ximgproc'
+
+Image statique :
+Traceback (most recent call last):
+  File "run.py", line 90, in <module>
+    output_img('garden', 2)
+  File "run.py", line 82, in output_img
+    output = compute_static_hdr(imgs, sigma)
+  File "/home/kevin/5A/traitement image/CVP/lib.py", line 168, in compute_static_hdr
+    Vs = [cross_bilinear(imgs_bw[i], Vs[i]) for i in range(0, len(Vs))]
+  File "/home/kevin/5A/traitement image/CVP/lib.py", line 140, in cross_bilinear
+    out = cv2.ximgproc.jointBilateralFilter(joint, src, d=-1, sigmaColor=255/10, sigmaSpace=16)
+AttributeError: 'module' object has no attribute 'ximgproc'
+
+

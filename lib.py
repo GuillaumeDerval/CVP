@@ -141,7 +141,7 @@ def cross_bilinear(img_wb, W):
     return out
 
 def compute_static_hdr(imgs, sigma=2, grayscale_method=ntsc_grayscale):
-    imgs_bw = map(grayscale_method, imgs)
+    imgs_bw = map(grayscale_method, imgs) #convertit l'image en noir et blanc
 
     i_x, i_y, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_bw))
 
