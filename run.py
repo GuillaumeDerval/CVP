@@ -86,5 +86,13 @@ def output_img(name, sigma):
     # plt.imshow(displayable_output)
     # plt.show()
 
+def output2_img(name):
+    import lib2
+    imgs = map(misc.imread, dynamic_img_path[name])
+    output = lib2.compute_hdr(imgs)
+    displayable_output = numpy.uint8(output)
+    misc.imsave('output/{}_backprob.png'.format(name), displayable_output)
 
-output_img('garden', 2)
+output_img('forrest',2)
+
+output2_img('forrest')
