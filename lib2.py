@@ -50,8 +50,8 @@ def background_prob(imgs, w, p, q):
                 sum2 = 0.0 #denominator
                 
                 for s in range(0, len(imgs)):
-                    for ip in range(max(0, y-q), min(y+q, len(imgs[0]))):
-                        for iq in range(max(0, x-p), min(x+p, len(imgs[0][0]))):
+                    for ip in range(max(0, y-q), min(y+q+1, len(imgs[0]))):
+                        for iq in range(max(0, x-p), min(x+p+1, len(imgs[0][0]))):
                             if((x,y)!=(ip,iq)):
                                 sum1 += kernel_density_est(pix - w[s][ip][iq]*numpy.transpose(numpy.array([iq, ip, imgs[s][ip][iq][0], imgs[s][ip][iq][1], imgs[s][ip][iq][2]])))
                                 sum2 += w[s][ip][iq]
@@ -70,7 +70,7 @@ def compute_hdr(imgs,weight_method=hat_weights):
     
     # iterations (formula (7))
     for i in range(0,3):
-        W = w_init*background_prob(imgs, W, 2, 2)
+        W = w_init*background_prob(imgs, W, 1, 1)
     
     # Apply same weight to all color coordinates
     W = normalise(W)
