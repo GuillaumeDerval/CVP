@@ -31,12 +31,12 @@ def background_prob(imgs, w, p, q):
     # dummy probabilities
     return numpy.ones((len(w), len(w[0]), len(w[0][0])))
     
-def compute_hdr(imgs):
+def compute_hdr(imgs,weight_method=hat_weights):
     # Convert all images to Lab color space
     imgs = [cv2.cvtColor(img, cv2.COLOR_RGB2Lab) for img in imgs]
     
     # initial computation
-    w_init = hat_weights(imgs)
+    w_init = weight_method(imgs)
     W = w_init
     
     # iterations
