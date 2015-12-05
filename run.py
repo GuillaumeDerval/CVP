@@ -93,6 +93,6 @@ def output2_img(name):
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_backprob.png'.format(name), displayable_output)
 
-output_img('forrest',2)
+#output_img('forrest',2)
 
-output2_img('forrest')
+output2_img('puppets')

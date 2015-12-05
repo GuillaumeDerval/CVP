@@ -19,6 +19,7 @@ def normalise(ms, epsilon=1e-15):
     return [m/deno for m in ms]
 
 def hat_weights(imgs):
+    # Formula (5) + mean
     w=numpy.zeros((len(imgs), len(imgs[0]) , len(imgs[0][0])))
     i=0
     for img in imgs:
@@ -27,9 +28,37 @@ def hat_weights(imgs):
         i=i+1
     return w    
 
+def kernel_density_est(x):
+    # formula (4)
+    H = numpy.identity(5)
+    return numpy.linalg.det(H)**(-0.5)*2*numpy.pi**(5.0/2)*numpy.exp(-0.5*numpy.dot(numpy.dot(numpy.transpose(x), numpy.linalg.inv(H)), x))
+    
 def background_prob(imgs, w, p, q):
-    # dummy probabilities
-    return numpy.ones((len(w), len(w[0]), len(w[0][0])))
+    # formula (6)
+    
+    prob = numpy.zeros((len(w), len(w[0]), len(w[0][0])))
+    
+    for r in range(0, len(imgs)):
+        print r
+        for y in range(0, len(imgs[0])):
+            print y
+            for x in range(0, len(imgs[0][0])):
+                #print x
+                pix = numpy.transpose(numpy.array([x, y, imgs[r][y][x][0], imgs[r][y][x][1], imgs[r][y][x][2]]))
+                
+                sum1 = 0.0 #nominator
+                sum2 = 0.0 #denominator
+                
+                for s in range(0, len(imgs)):
+                    for ip in range(max(0, y-q), min(y+q, len(imgs[0]))):
+                        for iq in range(max(0, x-p), min(x+p, len(imgs[0][0]))):
+                            if((x,y)!=(ip,iq)):
+                                sum1 += kernel_density_est(pix - w[s][ip][iq]*numpy.transpose(numpy.array([iq, ip, imgs[s][ip][iq][0], imgs[s][ip][iq][1], imgs[s][ip][iq][2]])))
+                                sum2 += w[s][ip][iq]
+
+                prob[r][y][x] = sum1/sum2
+                
+    return prob
     
 def compute_hdr(imgs,weight_method=hat_weights):
     # Convert all images to Lab color space
@@ -39,9 +68,9 @@ def compute_hdr(imgs,weight_method=hat_weights):
     w_init = weight_method(imgs)
     W = w_init
     
-    # iterations
-    for i in range(0,5):
-        W = w_init*background_prob(imgs, W, 3, 3)
+    # iterations (formula (7))
+    for i in range(0,3):
+        W = w_init*background_prob(imgs, W, 2, 2)
     
     # Apply same weight to all color coordinates
     W = normalise(W)
