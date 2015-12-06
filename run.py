@@ -91,7 +91,7 @@ def getZone(imgs, centerx,centery,r):
 def output2_img(name):
     import lib2
     imgs = map(misc.imread, dynamic_img_path[name])
-    imgs = getZone(imgs,460,220,16)
+    imgs = getZone(imgs,460,220,50)
     output = lib2.compute_hdr(imgs,name)
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_hat_backprob.png'.format(name), displayable_output)

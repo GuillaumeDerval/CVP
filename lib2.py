@@ -31,7 +31,7 @@ def hat_weights(imgs):
 def kernel_density_est(x):
     # formula (4)
     H = numpy.identity(5)
-    return numpy.linalg.det(H)**(-0.5)*2*numpy.pi**(5.0/2)*numpy.exp(-0.5*numpy.dot(numpy.dot(numpy.transpose(x), numpy.linalg.inv(H)), x))
+    return (numpy.linalg.det(H)**(-0.5)) * ((2*numpy.pi)**(5.0/2)) * numpy.exp(-0.5*numpy.dot(numpy.dot(numpy.transpose(x), numpy.linalg.inv(H)), x))
     
 def background_prob(imgs, w, p, q):
     # formula (6)
@@ -53,13 +53,12 @@ def background_prob(imgs, w, p, q):
                     for ip in range(max(0, y-q), min(y+q+1, len(imgs[0]))):
                         for iq in range(max(0, x-p), min(x+p+1, len(imgs[0][0]))):
                             if((x,y)!=(ip,iq)):
-                                sum1 += kernel_density_est(pix - w[s][ip][iq]*numpy.transpose(numpy.array([iq, ip, imgs[s][ip][iq][0], imgs[s][ip][iq][1], imgs[s][ip][iq][2]])))
+                                sum1 += w[s][ip][iq] * kernel_density_est(pix - numpy.transpose(numpy.array([iq, ip, imgs[s][ip][iq][0], imgs[s][ip][iq][1], imgs[s][ip][iq][2]])))
                                 sum2 += w[s][ip][iq]
-
                 prob[r][y][x] = sum1/sum2
                 
-                if (prob[r][y][x] <0.00000001): #rustine temporaire. Pourquoi autant de 0? 
-                    prob[r][y][x] = 1.0/len(imgs) 
+                #if (prob[r][y][x] <0.00000001): #rustine temporaire. Pourquoi autant de 0? 
+                #    prob[r][y][x] = 1.0/len(imgs) 
     return prob
     
 def compute_hdr(imgs,name = "name",weight_method=hat_weights):
@@ -69,9 +68,8 @@ def compute_hdr(imgs,name = "name",weight_method=hat_weights):
     w_init = weight_method(imgs)
     W = w_init
     # iterations (formula (7))
-    for i in range(0,1):
+    for i in range(0,5):
         P = background_prob(imgs, W, 1, 1)
-        
         print(P)
         numpy.save('Wsave/iter'+str(i)+'-'+name, W)
         W = w_init*P
