@@ -2,11 +2,13 @@
 import copy
 import numpy
 import cv2
+import time
 from scipy import ndimage
 import scipy
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter, generic_gradient_magnitude, convolve
 from scipy import signal
+from threading import Thread
 
 def normalise(ms, epsilon=1e-15):
     """
@@ -61,6 +63,45 @@ def background_prob(imgs, w, p, q):
                 #    prob[r][y][x] = 1.0/len(imgs) 
     return prob
     
+def partial_background_prob(imgs, w, p, q, prob, tn, tc):    
+    count = 0
+    for r in range(0, len(imgs)):
+        for y in range(0, len(imgs[0])):
+            #print y
+            for x in range(0, len(imgs[0][0])):
+                count +=1
+                if (count+tn)%tc==0:
+                    pix = numpy.transpose(numpy.array([x, y, imgs[r][y][x][0], imgs[r][y][x][1], imgs[r][y][x][2]]))
+                
+                    sum1 = 0.0 #nominator
+                    sum2 = 0.0 #denominator
+                    
+                    for s in range(0, len(imgs)):
+                        for ip in range(max(0, y-q), min(y+q+1, len(imgs[0]))):
+                            for iq in range(max(0, x-p), min(x+p+1, len(imgs[0][0]))):
+                                if((x,y)!=(ip,iq)):
+                                    sum1 += w[s][ip][iq] * kernel_density_est(pix - numpy.transpose(numpy.array([iq, ip, imgs[s][ip][iq][0], imgs[s][ip][iq][1], imgs[s][ip][iq][2]])))
+                                    sum2 += w[s][ip][iq]
+                    prob[r][y][x] = sum1/sum2
+    print(count)
+                
+def background_prob_mt(imgs, w, p, q,tc=1): 
+    # formula (6)
+    prob = numpy.zeros((len(w), len(w[0]), len(w[0][0])))
+    threads = []
+    
+    for tn in range(0,tc):
+        t = Thread(target=partial_background_prob, args=(imgs, w, p, q, prob, tn, tc))
+        threads.append(t)
+        t.start()
+        
+    for tn in range(0,tc):
+        threads[tn].join()
+    
+    return prob
+    
+    
+    
 def compute_hdr(imgs,name = "name",weight_method=hat_weights):
     # Convert all images to Lab color space
     imgs = [cv2.cvtColor(img, cv2.COLOR_RGB2Lab) for img in imgs]
@@ -68,7 +109,7 @@ def compute_hdr(imgs,name = "name",weight_method=hat_weights):
     w_init = weight_method(imgs)
     W = w_init
     # iterations (formula (7))
-    for i in range(0,5):
+    for i in range(0,1):
         P = background_prob(imgs, W, 1, 1)
         print(P)
         numpy.save('Wsave/iter'+str(i)+'-'+name, W)

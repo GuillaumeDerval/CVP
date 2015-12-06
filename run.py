@@ -1,6 +1,6 @@
 # coding=utf-8
 import numpy
-
+import time
 from scipy import ndimage
 from scipy import misc
 import os
@@ -91,7 +91,7 @@ def getZone(imgs, centerx,centery,r):
 def output2_img(name):
     import lib2
     imgs = map(misc.imread, dynamic_img_path[name])
-    imgs = getZone(imgs,460,220,50)
+    imgs = getZone(imgs,460,220,10)
     output = lib2.compute_hdr(imgs,name)
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_hat_backprob.png'.format(name), displayable_output)
@@ -106,4 +106,8 @@ def output3_img(name, sigma=2):
 #output_img('puppets')
 #output3_img('puppets')
 #output_img('forrest',2)
+
+start = time.time()
 output2_img('puppets')
+
+print('Exec in '+str(time.time() - start)+" seconds" )
