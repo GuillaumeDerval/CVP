@@ -5,7 +5,7 @@ from scipy import ndimage
 from scipy import misc
 import os
 import matplotlib.pyplot as plt
-from lib import compute_static_hdr, ntsc_grayscale, srgb_grayscale, stupid_grayscale, compute_m_theta, compute_dynamic_hdr
+from lib import compute_static_hdr, ntsc_grayscale, srgb_grayscale, stupid_grayscale, compute_m_theta, compute_dynamic_hdr, compute_dynamic_lab_hdr
 
 static_img_path = {
     "chateau":      ["img/chateau/chateau0.jpg",
@@ -76,9 +76,8 @@ def output_gradients(name, sigma):
 #    for i in [2, 3, 5, 10, 20, 50]:
 #        output_gradients(name, i)
 
-def output_img(name, sigma):
+def output_img(name, sigma=2):
     imgs = map(misc.imread, dynamic_img_path[name])
-
     output = compute_dynamic_hdr(imgs, sigma)
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_sigma{}g.png'.format(name, sigma), displayable_output)
@@ -91,8 +90,13 @@ def output2_img(name):
     imgs = map(misc.imread, dynamic_img_path[name])
     output = lib2.compute_hdr(imgs)
     displayable_output = numpy.uint8(output)
-    misc.imsave('output/{}_backprob.png'.format(name), displayable_output)
-
-output_img('forrest',2)
-
-output2_img('forrest')
+    misc.imsave('output/{}_hat_backprob.png'.format(name), displayable_output)
+	
+def output3_img(name, sigma=2):
+    imgs = map(misc.imread, dynamic_img_path[name])
+    output = compute_dynamic_lab_hdr(imgs, sigma)
+    displayable_output = numpy.uint8(output)
+    misc.imsave('output/{}_lab_sigma{}g.png'.format(name, sigma), displayable_output)
+    
+#output_img('puppets')
+output3_img('puppets')

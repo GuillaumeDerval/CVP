@@ -175,24 +175,18 @@ def compute_static_hdr(imgs, sigma=2, grayscale_method=ntsc_grayscale):
 
 def compute_dynamic_hdr(imgs, sigma=2, l=9, sigma_s=0.2):
     epsilon = 1e-25
-
     imgs_bw = map(srgb_grayscale, imgs)
     _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_bw))
     d = compute_theta_diff(thetas, l)
     S = compute_S(len(imgs), d, sigma_s)
-
     C = compute_C(imgs_bw, S, 0.9)
-
     Vs = normalise(ms)
-
     W = [c*v for c, v in zip(C, Vs)]
     W = normalise(W)
     W = [cross_bilinear(imgs_bw[i], W[i]) for i in range(0, len(W))]
     W = normalise(W)
-
     #SW = sum(W) + epsilon
     #W = [w/SW for w in W]
-
     #fig = plt.figure()
     #for i in range(0, 5):
         #a = fig.add_subplot(4, 5, i+1)
@@ -208,7 +202,69 @@ def compute_dynamic_hdr(imgs, sigma=2, l=9, sigma_s=0.2):
 
     #    cbar = fig.colorbar(plt.imshow(thetas[i]))
     #plt.show()
-
     Ws = map(lambda x: numpy.dstack((x, x, x,)), W)
     tmp = map(lambda x: (Ws[x] * imgs[x]), range(0, len(imgs)))
     return sum(tmp)
+	
+def imgToLab(img):
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+    return img
+    
+def imgFromLab(img):
+    img = cv2.cvtColor(img, cv2.COLOR_LAB2RGB)
+    return img
+	
+def extract(img):
+    l, a, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+    return (l, a, b)
+    
+def dynamic_weight_map(imgs,epsilon = 1e-25,sigma=2, l=9, sigma_s=0.2):
+    _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs))
+    d = compute_theta_diff(thetas, l)
+    S = compute_S(len(imgs), d, sigma_s)
+    C = compute_C(imgs, S, 0.9)
+    Vs = normalise(ms)
+    W = [c*v for c, v in zip(C, Vs)]
+    W = normalise(W)
+    W = [cross_bilinear(imgs[i], W[i]) for i in range(0, len(W))]
+    W = normalise(W)
+    #SW = sum(W) + epsilon
+    #W = [w/SW for w in W]
+    #fig = plt.figure()
+    #for i in range(0, 5):
+        #a = fig.add_subplot(4, 5, i+1)
+        #plt.imshow(imgs[i]/255., cmap=plt.cm.gray)
+        #a = fig.add_subplot(4, 5, i+5+1)
+        #plt.imshow((thetas[i]+numpy.pi)/(2.0* numpy.pi), cmap=plt.cm.gray)
+        #a = fig.add_subplot(4, 5, i + 10 + 1)
+        #plt.imshow(C[i], cmap=plt.cm.gray)
+        #a = fig.add_subplot(4, 5, i+15+1)
+        #plt.imshow(W[i], cmap=plt.cm.gray)
+
+    #    fig.add_subplot(1, 5, i+1)
+
+    #    cbar = fig.colorbar(plt.imshow(thetas[i]))
+    #plt.show()
+    return W
+    
+def compute_dynamic_lab_hdr(imgs, sigma=2, l=9, sigma_s=0.2):
+    imgs_lab = map(imgToLab, imgs)
+    imgs_L = map(lambda img:img[:, :, 0], imgs_lab)
+    imgs_alpha = map(lambda img:img[:, :, 1], imgs_lab)
+    imgs_beta = map(lambda img:img[:, :, 2], imgs_lab)
+    
+    W_L = dynamic_weight_map(imgs_L)
+    W_a = dynamic_weight_map(imgs_alpha)
+    W_b = dynamic_weight_map(imgs_beta)
+    
+    Ws = map(lambda x: numpy.dstack((W_L[x], W_a[x], W_b[x],)), range(0, len(W_L)))
+    #Ws = map(lambda x: numpy.dstack((x, x, x,)), W_L)
+    tmp = map(lambda x: (Ws[x] * imgs_lab[x]), range(0, len(imgs_lab)))
+    sum_lab = sum(tmp)
+    sum_lab=numpy.uint8(sum_lab)
+    print(sum_lab)
+    
+    rgb = imgFromLab(sum_lab)
+    
+    #print(rgb)
+    return rgb
