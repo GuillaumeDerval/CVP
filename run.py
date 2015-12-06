@@ -100,3 +100,5 @@ def output3_img(name, sigma=2):
     
 #output_img('puppets')
 output3_img('puppets')
+#output_img('forrest',2)
+#output2_img('puppets')

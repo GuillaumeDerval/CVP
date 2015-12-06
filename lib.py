@@ -262,7 +262,6 @@ def compute_dynamic_lab_hdr(imgs, sigma=2, l=9, sigma_s=0.2):
     tmp = map(lambda x: (Ws[x] * imgs_lab[x]), range(0, len(imgs_lab)))
     sum_lab = sum(tmp)
     sum_lab=numpy.uint8(sum_lab)
-    print(sum_lab)
     
     rgb = imgFromLab(sum_lab)
     
