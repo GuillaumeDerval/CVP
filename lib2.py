@@ -41,7 +41,7 @@ def background_prob(imgs, w, p, q):
     for r in range(0, len(imgs)):
         print r
         for y in range(0, len(imgs[0])):
-            print y
+            #print y
             for x in range(0, len(imgs[0][0])):
                 #print x
                 pix = numpy.transpose(numpy.array([x, y, imgs[r][y][x][0], imgs[r][y][x][1], imgs[r][y][x][2]]))
@@ -58,24 +58,29 @@ def background_prob(imgs, w, p, q):
 
                 prob[r][y][x] = sum1/sum2
                 
+                if (prob[r][y][x] <0.00000001): #rustine temporaire. Pourquoi autant de 0? 
+                    prob[r][y][x] = 1.0/len(imgs) 
     return prob
     
-def compute_hdr(imgs,weight_method=hat_weights):
+def compute_hdr(imgs,name = "name",weight_method=hat_weights):
     # Convert all images to Lab color space
     imgs = [cv2.cvtColor(img, cv2.COLOR_RGB2Lab) for img in imgs]
-    
     # initial computation
     w_init = weight_method(imgs)
     W = w_init
-    
     # iterations (formula (7))
-    for i in range(0,3):
-        W = w_init*background_prob(imgs, W, 1, 1)
-    
+    for i in range(0,1):
+        P = background_prob(imgs, W, 1, 1)
+        
+        print(P)
+        numpy.save('Wsave/iter'+str(i)+'-'+name, W)
+        W = w_init*P
     # Apply same weight to all color coordinates
     W = normalise(W)
+    
     Ws = map(lambda x: numpy.dstack((x, x, x,)), W)
     tmp = map(lambda x: (Ws[x]*imgs[x]), range(0, len(imgs)))
-    img =  numpy.uint8(sum(tmp)) 
+    s = sum(tmp)
+    img =  numpy.uint8(s) 
     # Returns image converted to RGB space
     return cv2.cvtColor(img, cv2.COLOR_Lab2RGB)
