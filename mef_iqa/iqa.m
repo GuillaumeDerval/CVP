@@ -48,12 +48,16 @@ end
 fI = imread(output);
 fI = double(rgb2gray(fI));
 [Q, Qs, QMap] = mef_ms_ssim(imgSeq, fI);
-figure(1);
-subplot(2,2,1), imshow(fI/255), title([output, sprintf(' - %f', Q)]);
+h = figure(1);
+subplot(2,2,1), imshow(fI/255), title([output, sprintf(' - %f', Q)], 'Interpreter','none');
 subplot(2,2,2), imshow(QMap{1}), title('quality map scale1');
 subplot(2,2,3), imshow(QMap{2}), title('quality map scale2');
 subplot(2,2,4), imshow(QMap{3}), title('quality map scale3');
 disp(Q);
+
+saveas(h, [output '.iqa.fig']);
+close(h);
+exit(0);
 
 end
         

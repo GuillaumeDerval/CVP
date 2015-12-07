@@ -1,6 +1,7 @@
 #! /usr/bin/python
 # coding=utf-8
 import os
+import subprocess
 from scipy import misc
 
 from lib import *
@@ -48,4 +49,5 @@ displayable_output = numpy.uint8(output)
 misc.imsave(args.output, displayable_output)
 
 if args.withiqa:
-    os.system('matlab -nodesktop -nojvm -nosplash -r "addpath(\'mef_iqa\'); iqa(\'' + args.source + '\', \'' + args.output + '\', 1)"')
+    p = subprocess.Popen('matlab -wait -nodesktop -nojvm -nosplash -r "addpath(\'mef_iqa\'); iqa(\'' + args.source + '\', \'' + args.output + '\', 1)"')
+    p.wait()
