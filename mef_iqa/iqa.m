@@ -1,9 +1,7 @@
-imagename = 'mask';
-reduce = 1;
+function iqa(source, output, reduce)
 
-%% model calculation
-path = sprintf('../img/%s', imagename);
-% find all JPEG or PPM files in directory
+path = source;
+% find all files in directory
 files = dir([path '/*']);
 files = files(3:end);
 N = length(files);
@@ -31,10 +29,11 @@ for i = 1:N
     if (reduce < 1)
         im = imresize(im,[r c],'bicubic');
     end
+    
     if size(im,3)==1
-    I(:,:,:,i) = cat(3,im,im,im);
+        I(:,:,:,i) = cat(3,im,im,im);
     else
-    I(:,:,:,i) = im;
+        I(:,:,:,i) = im;
     end
 end
 
@@ -46,18 +45,15 @@ for i = 1:s4
     imgSeq(:, :, i) =  rgb2gray( squeeze( imgSeqColor(:,:,:,i) ) ); % color to gray conversion
 end
 
-imfiles = dir(sprintf('../output/%s*', imagename));
+fI = imread(output);
+fI = double(rgb2gray(fI));
+[Q, Qs, QMap] = mef_ms_ssim(imgSeq, fI);
+figure(1);
+subplot(2,2,1), imshow(fI/255), title([output, sprintf(' - %f', Q)]);
+subplot(2,2,2), imshow(QMap{1}), title('quality map scale1');
+subplot(2,2,3), imshow(QMap{2}), title('quality map scale2');
+subplot(2,2,4), imshow(QMap{3}), title('quality map scale3');
+disp(Q);
 
-for k = 1:length(imfiles)
-    disp(imfiles(k))
-    fI = imread(strcat('../output/', imfiles(k).name));
-    fI = double(rgb2gray(fI));
-    [Q, Qs, QMap] = mef_ms_ssim(imgSeq, fI);
-    figure(k);
-    subplot(2,2,1), imshow(fI1/255), title(strcat(imfiles(k).name, sprintf(' - %f', Q)));
-    subplot(2,2,2), imshow(QMap1{1}), title('quality map scale1');
-    subplot(2,2,3), imshow(QMap1{2}), title('quality map scale2');
-    subplot(2,2,4), imshow(QMap1{3}), title('quality map scale3');
-    disp(Q);
 end
         

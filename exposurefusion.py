@@ -36,6 +36,7 @@ parser.add_argument("output", help="Where to put the output")
 parser.add_argument("--debug", help="Display intermediate results", action="store_true")
 parser.add_argument("--dynamic", help="Run dynamic exposure fusion", action="store_true")
 parser.add_argument("--filterbycolor", help="Run the cross bilateral filter on color rather than luminance", action="store_true")
+parser.add_argument("--withiqa", help="Run IQA after fusion", action="store_true")
 
 args = parser.parse_args()
 images = [misc.imread(os.path.join(args.source,x)) for x in os.listdir(args.source) if
@@ -45,3 +46,6 @@ images = [misc.imread(os.path.join(args.source,x)) for x in os.listdir(args.sour
 output = pipeline(images, static=(args.dynamic is False), filter_by_color=(args.filterbycolor is True))
 displayable_output = numpy.uint8(output)
 misc.imsave(args.output, displayable_output)
+
+if args.withiqa:
+    os.system('matlab -nodesktop -nojvm -nosplash -r "addpath(\'mef_iqa\'); iqa(\'' + args.source + '\', \'' + args.output + '\', 1)"')
