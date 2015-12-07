@@ -1,33 +1,12 @@
 function [oQ, Q, qMap] = mef_ms_ssim(imgSeq, fI, K, window, level, weight)
 % ========================================================================
-% Multi-exposure fused (MEF) image quality model Version 1.0
-% Copyright(c) 2015 Kede Ma, Kai Zeng and Zhou Wang
-% All Rights Reserved.
-%
-% ----------------------------------------------------------------------
-% Permission to use, copy, or modify this software and its documentation
-% for educational and research purposes only and without fee is hereby
-% granted, provided that this copyright notice and the original authors'
-% names appear on all copies and supporting documentation. This program
-% shall not be used, rewritten, or adapted as the basis of a commercial
-% software or hardware product without first obtaining permission of the
-% authors. The authors make no representations about the suitability of
-% this software for any purpose. It is provided "as is" without express
-% or implied warranty.
-%----------------------------------------------------------------------
 % This is an implementation of an objective image quality assessment model
 % for MEF images using their corresponding input source sequences 
 % as reference.
-% 
-% Please refer to the following paper:
 %
 % K. Ma et al., "Perceptual Quality Assessment for Multi-Exposure
 % Image Fusion" submitted to IEEE Transactions on 
 % Image Processing.
-%
-%
-% Kindly report any suggestions or corrections to k29ma@uwaterloo.ca,
-% kzeng@uwaterloo.ca or zhouwang@ieee.org
 %
 %----------------------------------------------------------------------
 %
@@ -45,11 +24,11 @@ function [oQ, Q, qMap] = mef_ms_ssim(imgSeq, fI, K, window, level, weight)
 %            weight = weight / sum(weight);
 %            Note that the length of weight and level should be the same.
 %            
-%Output: (1) oQ: The overlll quality score of the MEF image.
+% Output: (1) oQ: The overlll quality score of the MEF image.
 %        (2)  Q: The quality scores in each scale.
 %        (3) qMap: The quality maps of the MEF image in each scale. 
 %
-%Basic Usage:
+% Basic Usage:
 %   Given the test MEF image and its corresponding source sequence 
 %
 %   [oQ, Q, qMap] = mef_ms_ssim(imgSeq, fI);
