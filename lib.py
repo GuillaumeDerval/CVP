@@ -25,36 +25,6 @@ def stupid_grayscale(img):
 
     return y
 
-def gauss_derivative_kernels(sigma):
-    """ returns x and y derivatives of a 2D
-        gauss kernel array for convolutions """
-    size = sigma*2
-
-    y, x = numpy.mgrid[-size:size+1, -size:size+1]
-
-    coef = 2.0 * numpy.pi * (sigma ** 4)
-    sigma = float(2 * (sigma ** 2))
-
-    # x and y derivatives of a 2D gaussian with standard dev half of size
-    # (ignore scale factor)
-    gx = - x * numpy.exp(-(((x ** 2) + (y ** 2)) / sigma)) / coef
-    gy = - y * numpy.exp(-(((x ** 2) + (y ** 2)) / sigma)) / coef
-
-    return gx, gy
-
-
-def gauss_derivatives(im, sigma):
-    """ returns x and y derivatives of an image using gaussian
-        derivative filters of size n. The optional argument
-        ny allows for a different size in the y direction."""
-
-    gx, gy = gauss_derivative_kernels(sigma)
-
-    imx = scipy.ndimage.filters.convolve(im, gx)
-    imy = scipy.ndimage.filters.convolve(im, gy)
-
-    return imx, imy
-
 def compute_m_theta(img, sigma=2):
     """
     Compute Ix, Iy, m and theta
@@ -111,8 +81,6 @@ def compute_C(imgs_wb, S, tolerance):
     tmax = 255.0*tolerance
 
     for i, img in enumerate(imgs_wb):
-        #for x in numpy.nditer(img, op_flags=['readwrite']):
-        #    x[...] = 0. if x > tmax or x < tmin else 1.
         img = (img > tmin) & (img < tmax)
         C[i] *= img
 
@@ -122,115 +90,77 @@ def compute_C(imgs_wb, S, tolerance):
 
     return C
 
+
 def cross_bilinear(img_wb, W):
     joint = numpy.float32(img_wb)
     src = numpy.float32(W)
     out = cv2.ximgproc.jointBilateralFilter(joint, src, d=-1, sigmaColor=255/10, sigmaSpace=16)
     return out
 
-def compute_static_hdr(imgs, sigma=2, grayscale_method=ntsc_grayscale, show_plots=False):
-    imgs_bw = map(grayscale_method, imgs) #convertit l'image en noir et blanc
 
-    i_x, i_y, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_bw))
+def compute_weights_static(imgs_wb, sigma=2):
+    _, _, ms, _ = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_wb)) #calcul de l'intensité du gradient
 
-    Vs = normalise(ms)
+    return ms
 
-    # Show plots if needed
-    if show_plots:
-        fig = plt.figure()
-        for i in range(0, 3):
-           a = fig.add_subplot(3, 6, 6*i + 1)
-           plt.imshow(imgs_bw[i] / 255., cmap=plt.cm.gray)
-           a = fig.add_subplot(3, 6, 6*i + 2)
-           plt.imshow(i_x[i], cmap=plt.cm.gray)
-           a = fig.add_subplot(3, 6, 6*i + 3)
-           plt.imshow(i_y[i], cmap=plt.cm.gray)
-           a = fig.add_subplot(3, 6, 6*i + 4)
-           plt.imshow(ms[i], cmap=plt.cm.gray)
-           a = fig.add_subplot(3, 6, 6*i + 5)
-           plt.imshow(Vs[i], cmap=plt.cm.gray)
-           a = fig.add_subplot(3, 6, 6 * i + 6)
-           plt.imshow(cross_bilinear(imgs_bw[i], Vs[i]), cmap=plt.cm.gray)
-        plt.show()
 
-    Vs = [cross_bilinear(imgs_bw[i], Vs[i]) for i in range(0, len(Vs))]
-    Vs = normalise(Vs)
+def compute_weights_dynamic(imgs_wb, sigma=2, l=9, sigma_s=0.2):
+    _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_wb))  # calcul de l'intensité et direction du gradient
 
-    Vss = map(lambda x: numpy.dstack((x, x, x,)), Vs)
-
-    tmp = map(lambda x: (Vss[x]*imgs[x]), range(0, len(imgs)))
-    return sum(tmp)
-
-def compute_dynamic_hdr(imgs, sigma=2, l=9, sigma_s=0.2, show_plots=False):
-    epsilon = 1e-25
-    imgs_bw = map(srgb_grayscale, imgs)
-    _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_bw))
+    # Calcul de C, indiquant la variation de gradient de l'image par rapport à d'autres
     d = compute_theta_diff(thetas, l)
-    S = compute_S(len(imgs), d, sigma_s)
-    C = compute_C(imgs_bw, S, 0.9)
-    Vs = normalise(ms)
-    W = [c*v for c, v in zip(C, Vs)]
-    W = normalise(W)
-    W = [cross_bilinear(imgs_bw[i], W[i]) for i in range(0, len(W))]
-    W = normalise(W)
-    
-    if show_plots:
-        fig = plt.figure()
-        for i in range(0, 5):
-            a = fig.add_subplot(4, 5, i+1)
-            plt.imshow(imgs_bw[i]/255., cmap=plt.cm.gray)
-            a = fig.add_subplot(4, 5, i+5+1)
-            plt.imshow((thetas[i]+numpy.pi)/(2.0* numpy.pi), cmap=plt.cm.gray)
-            a = fig.add_subplot(4, 5, i + 10 + 1)
-            plt.imshow(C[i], cmap=plt.cm.gray)
-            a = fig.add_subplot(4, 5, i+15+1)
-            plt.imshow(W[i], cmap=plt.cm.gray)
-            fig.add_subplot(1, 5, i+1)
-            cbar = fig.colorbar(plt.imshow(thetas[i]))
-        plt.show()
-        
-    Ws = map(lambda x: numpy.dstack((x, x, x,)), W)
-    tmp = map(lambda x: (Ws[x] * imgs[x]), range(0, len(imgs)))
-    return sum(tmp)
-	
+    S = compute_S(len(imgs_wb), d, sigma_s)
+    C = compute_C(imgs_wb, S, 0.9)
+
+    return map(lambda x: ms[x]*C[x], range(0, len(imgs_wb)))
+
+def filter_weights(imgs_wb, weights):
+    return [cross_bilinear(imgs_wb[i], weights[i]) for i in range(0, len(weights))]
+
+def get_image_with_exposure_correction(imgs, filtered_and_normalized_weigths):
+    weights = map(lambda x: numpy.dstack((x, x, x,)), filtered_and_normalized_weigths)
+    return map(lambda x: (weights[x] * imgs[x]), range(0, len(imgs)))
+
+
 def extract(img):
     l, a, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
     return (l, a, b)
-    
-def dynamic_weight_map(imgs,epsilon = 1e-25,sigma=2, l=9, sigma_s=0.2, show_plots=False):
-    _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs))
-    d = compute_theta_diff(thetas, l)
-    S = compute_S(len(imgs), d, sigma_s)
-    C = compute_C(imgs, S, 0.9)
-    Vs = normalise(ms)
-    W = [c*v for c, v in zip(C, Vs)]
-    W = normalise(W)
-    W = [cross_bilinear(imgs[i], W[i]) for i in range(0, len(W))]
-    W = normalise(W)
-    #SW = sum(W) + epsilon
-    #W = [w/SW for w in W]
-    
-    if show_plots:
-        fig = plt.figure()
-        for i in range(0, 5):
-            a = fig.add_subplot(4, 5, i+1)
-            plt.imshow(imgs[i]/255., cmap=plt.cm.gray)
-            a = fig.add_subplot(4, 5, i+5+1)
-            plt.imshow((thetas[i]+numpy.pi)/(2.0* numpy.pi), cmap=plt.cm.gray)
-            a = fig.add_subplot(4, 5, i + 10 + 1)
-            plt.imshow(C[i], cmap=plt.cm.gray)
-            a = fig.add_subplot(4, 5, i+15+1)
-            plt.imshow(W[i], cmap=plt.cm.gray)
-            fig.add_subplot(1, 5, i+1)
-            cbar = fig.colorbar(plt.imshow(thetas[i]))
-            
-        plt.show()
-        
-    return W
-    
-def compute_dynamic_lab_hdr(imgs, sigma=2, l=9, sigma_s=0.2):
-    
-    for i in range(0, len(imgs)):
-        imgs[i] = cv2.cvtColor(imgs[i], cv2.COLOR_RGB2LAB)
-        
-    return cv2.cvtColor(compute_dynamic_hdr(imgs), cv2.COLOR_LAB2RGB)
+
+
+# def dynamic_weight_map(imgs,epsilon = 1e-25,sigma=2, l=9, sigma_s=0.2, show_plots=False):
+#     _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs))
+#     d = compute_theta_diff(thetas, l)
+#     S = compute_S(len(imgs), d, sigma_s)
+#     C = compute_C(imgs, S, 0.9)
+#     Vs = normalise(ms)
+#     W = [c*v for c, v in zip(C, Vs)]
+#     W = normalise(W)
+#     W = [cross_bilinear(imgs[i], W[i]) for i in range(0, len(W))]
+#     W = normalise(W)
+#     #SW = sum(W) + epsilon
+#     #W = [w/SW for w in W]
+#
+#     if show_plots:
+#         fig = plt.figure()
+#         for i in range(0, 5):
+#             a = fig.add_subplot(4, 5, i+1)
+#             plt.imshow(imgs[i]/255., cmap=plt.cm.gray)
+#             a = fig.add_subplot(4, 5, i+5+1)
+#             plt.imshow((thetas[i]+numpy.pi)/(2.0* numpy.pi), cmap=plt.cm.gray)
+#             a = fig.add_subplot(4, 5, i + 10 + 1)
+#             plt.imshow(C[i], cmap=plt.cm.gray)
+#             a = fig.add_subplot(4, 5, i+15+1)
+#             plt.imshow(W[i], cmap=plt.cm.gray)
+#             fig.add_subplot(1, 5, i+1)
+#             cbar = fig.colorbar(plt.imshow(thetas[i]))
+#
+#         plt.show()
+#
+#     return W
+#
+# def compute_dynamic_lab_hdr(imgs, sigma=2, l=9, sigma_s=0.2):
+#
+#     for i in range(0, len(imgs)):
+#         imgs[i] = cv2.cvtColor(imgs[i], cv2.COLOR_RGB2LAB)
+#
+#     return cv2.cvtColor(pipeline_basic(imgs, True), cv2.COLOR_LAB2RGB)
