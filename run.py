@@ -51,7 +51,7 @@ dynamic_img_path = {
                "img/SculptureGardenSequence/5.tif"]
 }
 
-def output_gradients(name, sigma):
+def output_static(name, sigma):
     imgs = map(misc.imread, static_img_path[name])
     imgs_bw = map(srgb_grayscale, imgs)
     #Ixs, Iys, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_bw))
@@ -69,21 +69,11 @@ def output_gradients(name, sigma):
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_{}.png'.format(name, sigma), displayable_output)
 
-
-#output_gradients("grandcanal", 2)
-
-#for name in static_img_path:
-#    for i in [2, 3, 5, 10, 20, 50]:
-#        output_gradients(name, i)
-
-def output_img(name, sigma=2):
+def output_dynamic(name, sigma=2):
     imgs = map(misc.imread, dynamic_img_path[name])
     output = compute_dynamic_hdr(imgs, sigma)
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_sigma{}g.png'.format(name, sigma), displayable_output)
-
-    # plt.imshow(displayable_output)
-    # plt.show()
     
 def getZone(imgs, centerx,centery,r):
     return map(lambda img:img[centery-r:centery+r,centerx-r:centerx+r],imgs)
@@ -96,18 +86,18 @@ def output2_img(name):
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_hat_backprob.png'.format(name), displayable_output)
 
-    
 def output3_img(name, sigma=2):
     imgs = map(misc.imread, dynamic_img_path[name])
     output = compute_dynamic_lab_hdr(imgs, sigma)
     displayable_output = numpy.uint8(output)
     misc.imsave('output/{}_lab_sigma{}g.png'.format(name, sigma), displayable_output)
-    
-#output_img('puppets')
-#output3_img('puppets')
-#output_img('forrest',2)
 
 start = time.time()
-output2_img('puppets')
+output_dynamic('puppets')
+#output_gradients("grandcanal", 2)
 
-print('Exec in '+str(time.time() - start)+" seconds" )
+#for name in static_img_path:
+#    for i in [2, 3, 5, 10, 20, 50]:
+#        output_gradients(name, i)
+
+print('Exec in ' + str(time.time() - start) + " seconds" )
