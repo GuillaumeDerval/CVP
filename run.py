@@ -93,7 +93,7 @@ def output3_img(name, sigma=2):
     misc.imsave('output/{}_lab_sigma{}g.png'.format(name, sigma), displayable_output)
 
 start = time.time()
-output_dynamic('puppets')
+output_static('mask',2)
 #output_gradients("grandcanal", 2)
 
 #for name in static_img_path:
