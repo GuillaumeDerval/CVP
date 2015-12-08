@@ -1,4 +1,0 @@
-hdr = hdrread('chateau.hdr');
-%rgb = tonemap(hdr);
-%imshow(rgb);
-[Q, S, N, s_maps, s_local] = TMQI(hdrImage, ldrImage)
