@@ -7,30 +7,6 @@ from scipy import misc
 from lib import *
 import argparse
 
-def pipeline(imgs, static=True, filter_by_color=False, debug=False, opts=None):
-    if not opts:
-        opts = {}
-    imgs_wb = [srgb_grayscale(img) for img in imgs]
-    if static:
-        weights = compute_weights_static(imgs_wb, **opts)
-    else:
-        weights = compute_weights_dynamic(imgs_wb, **opts)
-
-    weights = normalise(weights)
-
-    if filter_by_color:
-        weights = [numpy.dstack((x, x, x,)) for x in weights]
-        weights = filter_weights(imgs, weights)
-        weights = normalise(weights)
-    else:
-        weights = filter_weights(imgs_wb, weights)
-        weights = normalise(weights)
-        weights = [numpy.dstack((x, x, x,)) for x in weights]
-
-    img = sum([weights[i] * imgs[i] for i in range(0, len(imgs))])
-
-    return img
-
 parser = argparse.ArgumentParser(description='Compute an exposure-fused image from multiple different exposures')
 parser.add_argument("source", help="Folder containing all the images to be fused together")
 parser.add_argument("output", help="Where to put the output")
@@ -38,16 +14,22 @@ parser.add_argument("--debug", help="Display intermediate results", action="stor
 parser.add_argument("--dynamic", help="Run dynamic exposure fusion", action="store_true")
 parser.add_argument("--filterbycolor", help="Run the cross bilateral filter on color rather than luminance", action="store_true")
 parser.add_argument("--withiqa", help="Run IQA after fusion", action="store_true")
+parser.add_argument("--sigma", help="Fix the sigma for the gaussian derivate to compute the gradients", type=float, default=2.0)
+parser.add_argument("--sigmaColor", help="Fix the sigma for colors in the cross bilateral filter", type=float, default=255.0/10.0)
+parser.add_argument("--sigmaSpace", help="Fix the sigma for space in the cross bilateral filter", type=float, default=16.0)
 
 args = parser.parse_args()
 images = [misc.imread(os.path.join(args.source,x)) for x in os.listdir(args.source) if
           x.lower().endswith("jpg") or
           x.lower().endswith("png") or
           x.lower().endswith("tif")]
-output = pipeline(images, static=(args.dynamic is False), filter_by_color=(args.filterbycolor is True))
+output = pipeline(images, args.sigma, args.sigmaColor, args.sigmaSpace, static=(args.dynamic is False), filter_by_color=(args.filterbycolor is True))
 displayable_output = numpy.uint8(output)
 misc.imsave(args.output, displayable_output)
 
 if args.withiqa:
-    p = subprocess.Popen('matlab -wait -nodesktop -nojvm -nosplash -r "addpath(\'mef_iqa\'); iqa(\'' + args.source + '\', \'' + args.output + '\', 1)"')
+    DEVNULL = open(os.devnull, 'wb')
+    p = subprocess.Popen("matlab -wait -nodesktop -nosplash -r \"addpath('mef_iqa'); "
+                         "iqa('" + args.source + "', '" + args.output + "', 1, '"+ args.output+"_iqa.fig', '" + args.output + "_iqa.txt')",
+                         shell=True, stdout=DEVNULL, stderr=DEVNULL)
     p.wait()

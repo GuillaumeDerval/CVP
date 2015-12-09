@@ -1,16 +1,25 @@
-function iqa(source, output, reduce)
+function iqa(source, output, reduce, outputImgFile, outputValueFile)
 
 path = source;
-% find all files in directory
-files = dir([path '/*']);
-files = files(3:end);
+possibleFiles = dir([path '/*']);
+files = {};
+for Index = 1:length(possibleFiles)
+    baseFileName = possibleFiles(Index).name;
+    [folder, name, extension] = fileparts(baseFileName);
+    extension = upper(extension);
+    if (strcmpi(extension,'.png') || strcmpi(extension,'.jpg') || strcmpi(extension,'.tif'))
+        files = [files baseFileName];
+    end
+end
+
 N = length(files);
 if (N == 0)
     error('no files found');
+    
 end
 
 % allocate memory
-sz = size(imread([path '/' files(1).name]));
+sz = size(imread(strcat(path,'/',files{1})));
 r = floor(sz(1)*reduce);
 c = floor(sz(2)*reduce);
 I = zeros(r,c,3,N);
@@ -19,7 +28,7 @@ I = zeros(r,c,3,N);
 for i = 1:N
     
     % load image
-    filename = [path '/' files(i).name];
+    filename = strcat(path,'/',files{i});
     im =double(imread(filename));
     if (size(im,1) ~= sz(1) || size(im,2) ~= sz(2))
         error('images must all have the same size');
@@ -48,15 +57,25 @@ end
 fI = imread(output);
 fI = double(rgb2gray(fI));
 [Q, Qs, QMap] = mef_ms_ssim(imgSeq, fI);
-h = figure(1);
-subplot(2,2,1), imshow(fI/255), title([output, sprintf(' - %f', Q)], 'Interpreter','none');
-subplot(2,2,2), imshow(QMap{1}), title('quality map scale1');
-subplot(2,2,3), imshow(QMap{2}), title('quality map scale2');
-subplot(2,2,4), imshow(QMap{3}), title('quality map scale3');
+
+if ~isempty(outputImgFile)
+    h = figure(1);
+    subplot(2,2,1), imshow(fI/255), title([output, sprintf(' - %f', Q)], 'Interpreter','none');
+    subplot(2,2,2), imshow(QMap{1}), title('quality map scale1');
+    subplot(2,2,3), imshow(QMap{2}), title('quality map scale2');
+    subplot(2,2,4), imshow(QMap{3}), title('quality map scale3');
+    saveas(h, outputImgFile);
+    close(h);
+end
+
+if ~isempty(outputValueFile)
+    fileID = fopen(outputValueFile, 'w');
+    fprintf(fileID, '%f', Q);
+    fclose(fileID);
+end
+
 disp(Q);
 
-saveas(h, [output '.iqa.fig']);
-close(h);
 exit(0);
 
 end

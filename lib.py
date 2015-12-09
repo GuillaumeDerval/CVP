@@ -74,8 +74,6 @@ def compute_S(n, d, sigma_s):
     return S
 
 def compute_C(imgs_wb, S, tolerance):
-    epsilon = 1.0e-25
-
     C = numpy.copy(S)
     tmin = (1.0 - tolerance) * 255.0
     tmax = 255.0*tolerance
@@ -84,17 +82,15 @@ def compute_C(imgs_wb, S, tolerance):
         img = (img > tmin) & (img < tmax)
         C[i] *= img
 
-    SC = sum(C)+epsilon
-    for c in C:
-        c /= SC
+    C = normalise(C)
 
     return C
 
 
-def cross_bilinear(img_wb, W):
+def cross_bilinear(img_wb, W, sigmaColor=255.0/10, sigmaSpace=16.0):
     joint = numpy.float32(img_wb)
     src = numpy.float32(W)
-    out = cv2.ximgproc.jointBilateralFilter(joint, src, d=-1, sigmaColor=255/10, sigmaSpace=16)
+    out = cv2.ximgproc.jointBilateralFilter(joint, src, d=-1, sigmaColor=sigmaColor, sigmaSpace=sigmaSpace)
     return out
 
 
@@ -104,8 +100,9 @@ def compute_weights_static(imgs_wb, sigma=2):
     return ms
 
 
-def compute_weights_dynamic(imgs_wb, sigma=2, l=9, sigma_s=0.2):
-    _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_wb))  # calcul de l'intensité et direction du gradient
+def compute_weights_dynamic(imgs_wb, sigma=2, l=9, sigma_s=0.2, sigma_T=2):
+    _, _, ms, _ = zip(*map(lambda x: compute_m_theta(x, sigma), imgs_wb))  # calcul de l'intensité du gradient
+    _, _, _, thetas = zip(*map(lambda x: compute_m_theta(x, sigma_T), imgs_wb))  # calcul de la direction du gradient
 
     # Calcul de C, indiquant la variation de gradient de l'image par rapport à d'autres
     d = compute_theta_diff(thetas, l)
@@ -114,8 +111,8 @@ def compute_weights_dynamic(imgs_wb, sigma=2, l=9, sigma_s=0.2):
 
     return map(lambda x: ms[x]*C[x], range(0, len(imgs_wb)))
 
-def filter_weights(imgs_wb, weights):
-    return [cross_bilinear(imgs_wb[i], weights[i]) for i in range(0, len(weights))]
+def filter_weights(imgs_wb, weights, sigmaColor=255.0/10, sigmaSpace=16.0):
+    return [cross_bilinear(imgs_wb[i], weights[i], sigmaColor, sigmaSpace) for i in range(0, len(weights))]
 
 def get_image_with_exposure_correction(imgs, filtered_and_normalized_weigths):
     weights = map(lambda x: numpy.dstack((x, x, x,)), filtered_and_normalized_weigths)
@@ -126,6 +123,34 @@ def extract(img):
     l, a, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
     return (l, a, b)
 
+def pipeline(imgs,
+             sigma,
+             sigmaColor,
+             sigmaSpace,
+             static=True, filter_by_color=False, debug=False, opts=None):
+
+    if not opts:
+        opts = {}
+    imgs_wb = [srgb_grayscale(img) for img in imgs]
+    if static:
+        weights = compute_weights_static(imgs_wb, sigma=sigma)
+    else:
+        weights = compute_weights_dynamic(imgs_wb, sigma=sigma, **opts)
+
+    weights = normalise(weights)
+
+    if filter_by_color:
+        weights = [numpy.dstack((x, x, x,)) for x in weights]
+        weights = filter_weights(imgs, weights, sigmaColor, sigmaSpace)
+        weights = normalise(weights)
+    else:
+        weights = filter_weights(imgs_wb, weights, sigmaColor, sigmaSpace)
+        weights = normalise(weights)
+        weights = [numpy.dstack((x, x, x,)) for x in weights]
+
+    img = sum([weights[i] * imgs[i] for i in range(0, len(imgs))])
+
+    return img
 
 # def dynamic_weight_map(imgs,epsilon = 1e-25,sigma=2, l=9, sigma_s=0.2, show_plots=False):
 #     _, _, ms, thetas = zip(*map(lambda x: compute_m_theta(x, sigma), imgs))
