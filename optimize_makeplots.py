@@ -15,7 +15,7 @@ images = {x: Image.open(y) for x,y in images.iteritems()}
 #Annotate images
 def annotate(image, text):
     draw = ImageDraw(image)
-    font = truetype("HelveticaNeueLTStd-It.otf", 16)
+    font = truetype("Helvetica.otf", 16)
     draw.text((0, 0), text, (255, 255, 255), font=font)
 
 idx = 0

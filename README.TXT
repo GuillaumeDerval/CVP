@@ -28,3 +28,15 @@ lib.py : Main functions of the gradient-based exposure fusion algorithm
 mef_iqa/iqa.m : Main MATLAB program to run IQA. Takes the same arguments as exposurefusion.py as source and output
 mef_iqa/mef_ms_ssim.m : Multi-scale IQA algorithm
 mef_iqa/mef_ssim.m : Mono-scale IQA algorithm
+
+----------------------
+
+Tools :
+
+run.py : Runs the exposure fusion + IQA on images folder found in "static_input" folder
+         Also runs IQA on corresponding images filename "_method" in the "static2_output" folder
+         Used to generate data for comparisons...        
+parse_iqa_results.py : Take the output of run.py and generate a nice CSV file for putting on report
+optimize.py	: Look for the paramaters that maximizes IQA
+optimize_makeplots.py : Make plots from results of optimize.py
+image2gif.py : Generate GIF images of fused images varying with paramaters
