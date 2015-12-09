@@ -1,78 +1,29 @@
-function [oQ, Q, qMap] = mef_ms_ssim(imgSeq, fI, K, window, level, weight)
-% ========================================================================
-% This is an implementation of an objective image quality assessment model
-% for MEF images using their corresponding input source sequences 
-% as reference.
-%
-% K. Ma et al., "Perceptual Quality Assessment for Multi-Exposure
-% Image Fusion" submitted to IEEE Transactions on 
-% Image Processing.
-%
-%----------------------------------------------------------------------
-%
-%Input : (1) imgSeq: source sequence being used as reference in [0-255] grayscale.
-%        (2) fI: the MEF image being compared in [0-255] grayscale.
-%        (3) K: constant in the SSIM index formula (see the above
-%            reference). defualt value: K = 0.03
-%        (4) window: local window for statistics. default widnow is 
-%            Gaussian given by window = fspecial('gaussian', 11, 1.5);
-%        (5) level: multi-scale level used for downsampling. default value:
-%            level = 3;
-%        (6) weight: the weights in each scale (see the above reference).
-%            default value is given by 
-%            weight = [0.0448  0.2856  0.3001]'; 
-%            weight = weight / sum(weight);
-%            Note that the length of weight and level should be the same.
+function [oQ, Q, qMap] = mef_ms_ssim(imgSeq, fI, window)
+
+%- imgSeq: source sequence in [0-255] grayscale.
+%- fI: the MEF image to compare in [0-255] grayscale.
+%- window: local window for statistics. default widnow is 
+%  Gaussian given by window = fspecial('gaussian', 11, 1.5);
 %            
-% Output: (1) oQ: The overlll quality score of the MEF image.
-%        (2)  Q: The quality scores in each scale.
-%        (3) qMap: The quality maps of the MEF image in each scale. 
+%- oQ: The overall quality score of the MEF image.
+%   Q: The quality scores in each scale.
+%  qMap: The quality maps of the MEF image in each scale. 
 %
-% Basic Usage:
-%   Given the test MEF image and its corresponding source sequence 
-%
-%   [oQ, Q, qMap] = mef_ms_ssim(imgSeq, fI);
-%
-%
-%========================================================================
-
-
-if (nargin < 2 || nargin > 6)
-   oQ = -Inf;
-   Q = -Inf;
-   qMap = -Inf;
-   return;
-end
-
-if (~exist('K', 'var'))
-   K = 0.03;
-end
+% usage: [oQ, Q, qMap] = mef_ms_ssim(imgSeq, fI);
 
 if (~exist('window', 'var'))
    window = fspecial('gaussian', 11, 1.5);
 end
 
 [H, W] = size(window);
-
-if (~exist('level','var'))
-   level = 3;
-end
-
-if (~exist('weight', 'var'))
-   weight = [0.0448  0.2856  0.3001]'; 
-   weight = weight / sum(weight);
-end
-
-if level ~= length(weight)
-   oQ = -Inf;
-   Q = -Inf;
-   qMap = -Inf;
-   return;
-end
+level = 3;
+weight = [0.0448  0.2856  0.3001]'; 
+weight = weight / sum(weight);
 
 [s1, s2, s3] = size(imgSeq);
 minImgWidth = min(s1, s2)/(2^(level-1));
 maxWinWidth = max(H, W);
+
 if (minImgWidth < maxWinWidth)
    oQ = -Inf;
    Q = -Inf;
@@ -86,12 +37,12 @@ downsampleFilter = ones(2)./4;
 Q = zeros(level,1);
 qMap = cell(level,1);
 if level == 1
-    [Q, qMap] = mef_ssim(imgSeq, fI,  K, window);
+    [Q, qMap] = mef_ssim(imgSeq, fI, window);
     oQ = Q;
     return;
 else
     for l = 1 : level - 1
-        [Q(l), qMap{l}] = mef_ssim(imgSeq, fI,  K, window); 
+        [Q(l), qMap{l}] = mef_ssim(imgSeq, fI, window); 
         imgSeqC = imgSeq;
         clear imgSeq;
         for i = 1:s3
@@ -104,7 +55,7 @@ else
         fI = dI(1:2:end, 1:2:end);
     end
     % the coarsest scale
-    [Q(level), qMap{level}] = mef_ssim(imgSeq, fI,  K, window);
+    [Q(level), qMap{level}] = mef_ssim(imgSeq, fI, window);
     Q = Q(:);
     oQ = prod(Q.^weight);
 end

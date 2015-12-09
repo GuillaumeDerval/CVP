@@ -1,20 +1,6 @@
-function [Q, qMap] = mef_ssim(imgSeq, fI,  K, window) 
+function [Q, qMap] = mef_ssim(imgSeq, fI, window) 
 
-if (nargin < 2 || nargin > 4)
-   Q = -Inf;
-   qMap = Inf;
-   return;
-end
-
-if (~exist('K', 'var'))
-   K = 0.03;
-end
-
-if (~exist('window', 'var'))
-   window = fspecial('gaussian', 11, 1.5);
-end
-
-
+K = 0.03;
 imgSeq = double(imgSeq);
 fI = double(fI);
 [s1, s2, s3] = size(imgSeq);
