@@ -14,9 +14,9 @@ parser.add_argument("--debug", help="Display intermediate results", action="stor
 parser.add_argument("--dynamic", help="Run dynamic exposure fusion", action="store_true")
 parser.add_argument("--filterbycolor", help="Run the cross bilateral filter on color rather than luminance", action="store_true")
 parser.add_argument("--withiqa", help="Run IQA after fusion", action="store_true")
-parser.add_argument("--sigma", help="Fix the sigma for the gaussian derivate to compute the gradients", type=float, default=2.0)
+parser.add_argument("--sigma", help="Fix the sigma for the gaussian derivate to compute the gradients", type=float, default=20.0)
 parser.add_argument("--sigmaColor", help="Fix the sigma for colors in the cross bilateral filter", type=float, default=255.0/10.0)
-parser.add_argument("--sigmaSpace", help="Fix the sigma for space in the cross bilateral filter", type=float, default=16.0)
+parser.add_argument("--sigmaSpace", help="Fix the sigma for space in the cross bilateral filter", type=float, default=25.0)
 
 args = parser.parse_args()
 images = [misc.imread(os.path.join(args.source,x)) for x in os.listdir(args.source) if
